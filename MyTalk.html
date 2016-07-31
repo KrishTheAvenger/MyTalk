@@ -1,0 +1,186 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>My Talk - Speech to Text Sample</title>
+    <link rel="stylesheet" href="bootstrap-yeti.css" />
+    <script src="jquery-3.1.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar navbar-inverse">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-2">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#">My Talk</a>
+                </div>
+
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-2">
+                    <ul class="nav navbar-nav">
+                        <li><a href="#">Info</a></li>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="#">About Us</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="row">
+            <div class="form-group">
+                <h3>Welcome Buddy..!!</h3>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <label for="textArea" class="col-lg-3 control-label">
+                    <h5>
+                        Click on Record to start recording.
+                    </h5>
+                </label>
+                <div class="col-lg-9">
+                    <button id="button-play-ws" class="btn btn-success">Record</button>
+
+                </div>
+            </div>
+        </div>
+        <div class="row">
+
+            <div class="form-group">
+                <label for="textArea" class="col-lg-3 control-label">
+                    <h5>
+                        Input Commands :
+                    </h5>
+                </label>
+
+                <div class="col-lg-9">
+                    <textarea class="form-control" rows="3" id="transcription" readonly="readonly"></textarea>
+                    <span class="help-block">This is the place where you can see the voice commands.</span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-3"></div>
+            <div class="col-lg-9">
+                <p class="text-primary" id="statustext"></p>
+                <p class="text-info" id="accuracytext"></p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <div style="display:none">
+                    <span>Results:</span>
+                    <label><input type="radio" name="recognition-type" value="final" /> Final only</label>
+                    <label><input type="radio" name="recognition-type" value="interim" checked="checked" /> Interim</label>
+                </div>
+                <h4>Log:</h4>
+                <div id="log"></div>
+            </div>
+
+        </div>
+        <div class="buttons-wrapper">
+            <!--<button id="button-stop-ws" class="btn btn-warning">Stop demo</button>-->
+            <button id="clear-all" class="btn btn-default">Clear all</button>
+        </div>
+
+    </div>
+    <script>
+        // Test browser support
+        window.SpeechRecognition = window.SpeechRecognition ||
+                                   window.webkitSpeechRecognition ||
+                                   null;
+
+        if (window.SpeechRecognition === null) {
+            document.getElementById('ws-unsupported').classList.remove('hidden');
+            document.getElementById('button-play-ws').setAttribute('disabled', 'disabled');
+            document.getElementById('button-stop-ws').setAttribute('disabled', 'disabled');
+            alert('Your Browser seems to not supported with speech api');
+        } else {
+            var recognizer = new window.SpeechRecognition();
+            var transcription = document.getElementById('transcription');
+            var log = document.getElementById('log');
+
+
+            // Recogniser doesn't stop listening even if the user pauses
+            recognizer.continuous = true;
+
+            // Start recognising
+            recognizer.onresult = function (event) {
+                transcription.textContent = '';
+
+                for (var i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        transcription.textContent = event.results[i][0].transcript;
+                        $('#accuracytext').text(' Last Accuracy : ' + event.results[i][0].confidence);
+                    } else {
+                        transcription.textContent += event.results[i][0].transcript;
+                    }
+                }
+            };
+
+            // Listen for errors
+            recognizer.onerror = function (event) {
+                log.innerHTML = 'Recognition error: ' + event.message + '<br />' + log.innerHTML;
+            };
+
+            //$("#button-play-ws").mouseup(function () {
+            //    recognizer.stop();
+            //    log.innerHTML = 'Recognition stopped' + '<br />' + log.innerHTML;
+            //    $("#button-play-ws").Text = 'Recording..';
+            //}).mousedown(function () {
+            //    recognizer.interimResults = document.querySelector('input[name="recognition-type"][value="interim"]').checked;
+
+            //    try {
+            //        recognizer.start();
+            //        log.innerHTML = 'Recognition started' + '<br />' + log.innerHTML;
+            //    } catch (ex) {
+            //        log.innerHTML = 'Recognition error: ' + ex.message + '<br />' + log.innerHTML;
+            //    }
+            //    $("#button-play-ws").Text = 'Record';
+            //});
+
+            //document.getElementById('button-play-ws').addEventListener('click', function () {
+            $('#button-play-ws').click(function () {
+                if ($('#button-play-ws').text() == 'Record') {
+                    $('#statustext').text('Listening to your voice..!!');
+                    // Set if we need interim results
+                    recognizer.interimResults = document.querySelector('input[name="recognition-type"][value="interim"]').checked;
+
+                    try {
+                        recognizer.start();
+                        log.innerHTML = 'Recognition started' + '<br />' + log.innerHTML;
+                    } catch (ex) {
+                        log.innerHTML = 'Recognition error: ' + ex.message + '<br />' + log.innerHTML;
+                    }
+                    $('#button-play-ws').text('Stop');
+                }
+                else {
+                    recognizer.stop();
+                    log.innerHTML = 'Recognition stopped' + '<br />' + log.innerHTML;
+                    $('#statustext').text('');
+                    $('#button-play-ws').text('Record');
+                }
+            });
+
+            //document.getElementById('button-stop-ws').addEventListener('click', function () {
+            //$('#button-stop-ws').click(function () {
+            //    recognizer.stop();
+            //    log.innerHTML = 'Recognition stopped' + '<br />' + log.innerHTML;
+            //});
+
+            $('#clear-all').click(function () {
+                transcription.textContent = '';
+                log.textContent = '';
+            });
+        }
+    </script>
+</body>
+</html>
